@@ -20,10 +20,25 @@ const Editor = ({ language, value, onChange, theme }) => {
             if (!editorRef.current || monacoEditorRef.current) return;
 
             try {
+                // Define the vs-light theme
+                monaco.editor.defineTheme('vs-light', {
+                    base: 'vs',
+                    inherit: true,
+                    rules: [],
+                    colors: {
+                        'editor.background': '#ffffff',
+                        'editor.foreground': '#000000',
+                        'editor.lineHighlightBackground': '#f5f5f5',
+                        'editor.selectionBackground': '#add6ff',
+                        'editorCursor.foreground': '#000000',
+                        'editor.inactiveSelectionBackground': '#e5ebf1'
+                    }
+                });
+
                 monacoEditorRef.current = monaco.editor.create(editorRef.current, {
                     value,
                     language,
-                    theme,
+                    theme: theme === 'vs' ? 'vs-light' : theme,
                     automaticLayout: true,
                     minimap: { enabled: false },
                     scrollBeyondLastLine: true,
@@ -92,7 +107,7 @@ const Editor = ({ language, value, onChange, theme }) => {
     // Update theme
     useEffect(() => {
         if (monacoEditorRef.current) {
-            monaco.editor.setTheme(theme);
+            monaco.editor.setTheme(theme === 'vs' ? 'vs-light' : theme);
         }
     }, [theme]);
 

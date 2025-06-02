@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Package, Moon, Sun } from 'lucide-react';
+import { Package, Moon, Sun, Copy, Check } from 'lucide-react';
 import Split from 'split.js';
 import Editor from './components/Editor';
 import Preview from './components/Preview';
@@ -15,6 +15,7 @@ function App() {
     const [darkMode, setDarkMode] = useState(false);
     const [showPackageManager, setShowPackageManager] = useState(false);
     const [activeTab, setActiveTab] = useState('html');  // Not used, but kept for potential future features
+    const [copySuccess, setCopySuccess] = useState(false);
 
     const splitVerticalRef = useRef(null);
     const splitHorizontalRef = useRef(null);
@@ -86,36 +87,68 @@ function App() {
         setPackages(packages.filter(p => p !== packageUrl));
     };
 
+    const getMergedCode = () => {
+        return `<!DOCTYPE html>
+<html class="${darkMode ? 'dark' : ''}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        ${packages
+                .filter(pkg => pkg.endsWith('.css'))
+                .map(pkg => `<link rel="stylesheet" href="${pkg}" />`)
+                .join('\n        ')}
+        <style>
+            :root { color-scheme: ${darkMode ? 'dark' : 'light'}; }
+            body { margin: 0; min-height: 100vh; }
+            .dark body { background: #1a1a1a; color: #fff; }
+            ${css}
+        </style>
+    </head>
+    <body>
+        ${html}
+        ${packages
+                .filter(pkg => pkg.endsWith('.js'))
+                .map(pkg => `<script src="${pkg}"></script>`)
+                .join('\n        ')}
+        <script>
+            ${js}
+        </script>
+    </body>
+</html>`;
+    };
+
+    const handleCopyCode = async () => {
+        try {
+            await navigator.clipboard.writeText(getMergedCode());
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
+
     return (
         <div className={`h-screen flex flex-col ${darkMode ? 'dark' : ''}`}>
             <header className={`flex items-center justify-between px-4 h-12 border-b ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
                 <div className="flex items-center space-x-1">
                     <button
-                        onClick={() => setActiveTab('html')}
-                        className={`px-3 py-1.5 rounded-md text-sm ${activeTab === 'html'
-                            ? (darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900')
-                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        onClick={handleCopyCode}
+                        className={`bg-gray-200 bg-opacity-50 border flex hover:bg-gray-200 items-center px-3 py-1.5 rounded-md space-x-2 text-sm ${darkMode
+                            ? 'bg-gray-800 text-white hover:bg-gray-700'
+                            : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                             }`}
                     >
-                        HTML
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('css')}
-                        className={`px-3 py-1.5 rounded-md text-sm ${activeTab === 'css'
-                            ? (darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900')
-                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                            }`}
-                    >
-                        CSS
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('js')}
-                        className={`px-3 py-1.5 rounded-md text-sm ${activeTab === 'js'
-                            ? (darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900')
-                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                            }`}
-                    >
-                        JavaScript
+                        {copySuccess ? (
+                            <>
+                                <Check className="h-4 w-4" />
+                                <span>Copied!</span>
+                            </>
+                        ) : (
+                            <>
+                                <Copy className="h-4 w-4" />
+                                <span>Copy Merged Code</span>
+                            </>
+                        )}
                     </button>
                 </div>
 
